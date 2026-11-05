@@ -77,8 +77,23 @@ public sealed partial class K0sStreamsMessageBus : IMessageBus
         {
             while (!linked.IsCancellationRequested)
             {
-                ReceiveResponse? delivery = await ReceiveAsync(topic, group, consumerId, linked.Token)
-                    .ConfigureAwait(false);
+                ReceiveResponse? delivery;
+
+                try
+                {
+                    delivery = await ReceiveAsync(topic, group, consumerId, linked.Token)
+                        .ConfigureAwait(false);
+                }
+                catch (OperationCanceledException) when (linked.IsCancellationRequested)
+                {
+                    break;
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "K0sStreams receive failed on {Topic}; retrying.", topic);
+                    await Task.Delay(_options.PollIntervalMs, linked.Token).ConfigureAwait(false);
+                    continue;
+                }
 
                 if (delivery is null)
                 {
@@ -99,18 +114,12 @@ public sealed partial class K0sStreamsMessageBus : IMessageBus
                     record,
                     delivery.Attempt);
 
+                MessageResult outcome;
+
                 try
                 {
-                    MessageResult outcome = await handler
+                    outcome = await handler
                         .HandleAsync(busDelivery, linked.Token)
-                        .ConfigureAwait(false);
-
-                    if (outcome == MessageResult.DeadLetter)
-                    {
-                        await PublishAsync(Topics.DeadLetter, record, linked.Token).ConfigureAwait(false);
-                    }
-
-                    await AckAsync(topic, group, delivery.Partition, delivery.Offset, linked.Token)
                         .ConfigureAwait(false);
                 }
                 catch (OperationCanceledException) when (linked.IsCancellationRequested)
@@ -127,8 +136,44 @@ public sealed partial class K0sStreamsMessageBus : IMessageBus
                         delivery.Offset,
                         delivery.Attempt);
 
-                    await NackAsync(topic, group, delivery.Partition, delivery.Offset, ex.Message, linked.Token)
+                    await SafeNackAsync(topic, group, delivery, ex.Message, linked.Token)
                         .ConfigureAwait(false);
+                    continue;
+                }
+
+                if (outcome == MessageResult.DeadLetter)
+                {
+                    try
+                    {
+                        await PublishAsync(Topics.DeadLetter, record, linked.Token).ConfigureAwait(false);
+                    }
+                    catch (Exception ex) when (ex is not OperationCanceledException)
+                    {
+                        _logger.LogError(ex, "Could not publish {RecordId} to the dead-letter topic.", record.Id);
+                        await SafeNackAsync(topic, group, delivery, ex.Message, linked.Token)
+                            .ConfigureAwait(false);
+                        continue;
+                    }
+                }
+
+                try
+                {
+                    await AckAsync(topic, group, delivery.Partition, delivery.Offset, linked.Token)
+                        .ConfigureAwait(false);
+                }
+                catch (OperationCanceledException) when (linked.IsCancellationRequested)
+                {
+                    break;
+                }
+                catch (Exception ex)
+                {
+                    // The record will be redelivered after the visibility timeout; handlers are idempotent.
+                    _logger.LogWarning(
+                        ex,
+                        "Could not ack {Topic}/{Partition}/{Offset}; it will be redelivered.",
+                        topic,
+                        delivery.Partition,
+                        delivery.Offset);
                 }
             }
         }
@@ -258,6 +303,33 @@ public sealed partial class K0sStreamsMessageBus : IMessageBus
             .ConfigureAwait(false);
 
         await EnsureSuccessAsync(response, "nack", cancellationToken).ConfigureAwait(false);
+    }
+
+    private async Task SafeNackAsync(
+        string topic,
+        string group,
+        ReceiveResponse delivery,
+        string reason,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            await NackAsync(topic, group, delivery.Partition, delivery.Offset, reason, cancellationToken)
+                .ConfigureAwait(false);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            // Shutdown.
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(
+                ex,
+                "Could not nack {Topic}/{Partition}/{Offset}; it will be redelivered after the visibility timeout.",
+                topic,
+                delivery.Partition,
+                delivery.Offset);
+        }
     }
 
     private async Task LeaveAsync(
