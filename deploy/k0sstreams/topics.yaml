@@ -1,0 +1,39 @@
+apiVersion: k0sstreams.io/v1
+kind: Topic
+metadata:
+  name: flight-positions
+  namespace: k0sstreams
+spec:
+  partitions: 3
+  maxRetries: 3
+  retryBackoffSeconds: 5
+---
+apiVersion: k0sstreams.io/v1
+kind: Topic
+metadata:
+  name: flight-alerts
+  namespace: k0sstreams
+spec:
+  partitions: 3
+  maxRetries: 3
+  retryBackoffSeconds: 5
+---
+apiVersion: k0sstreams.io/v1
+kind: Topic
+metadata:
+  name: flight-stats
+  namespace: k0sstreams
+spec:
+  partitions: 3
+  maxRetries: 3
+  retryBackoffSeconds: 5
+---
+apiVersion: k0sstreams.io/v1
+kind: Topic
+metadata:
+  name: flight-dlq
+  namespace: k0sstreams
+spec:
+  partitions: 3
+  maxRetries: 3
+  retryBackoffSeconds: 5

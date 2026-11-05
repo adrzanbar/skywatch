@@ -1,0 +1,19 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/SkyWatch.Aggregator/SkyWatch.Aggregator.csproj" />
+    <Project Path="src/SkyWatch.Analytics/SkyWatch.Analytics.csproj" />
+    <Project Path="src/SkyWatch.Contracts/SkyWatch.Contracts.csproj" />
+    <Project Path="src/SkyWatch.Messaging.Hosting/SkyWatch.Messaging.Hosting.csproj" />
+    <Project Path="src/SkyWatch.Messaging.K0sStreams/SkyWatch.Messaging.K0sStreams.csproj" />
+    <Project Path="src/SkyWatch.Messaging.Kafka/SkyWatch.Messaging.Kafka.csproj" />
+    <Project Path="src/SkyWatch.Messaging/SkyWatch.Messaging.csproj" />
+    <Project Path="src/SkyWatch.Producer/SkyWatch.Producer.csproj" />
+    <Project Path="src/SkyWatch.Sources.AdsbLol/SkyWatch.Sources.AdsbLol.csproj" />
+    <Project Path="src/SkyWatch.Tracker/SkyWatch.Tracker.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/SkyWatch.Analytics.Tests/SkyWatch.Analytics.Tests.csproj" />
+    <Project Path="tests/SkyWatch.Messaging.Tests/SkyWatch.Messaging.Tests.csproj" />
+    <Project Path="tests/SkyWatch.Sources.Tests/SkyWatch.Sources.Tests.csproj" />
+  </Folder>
+</Solution>
