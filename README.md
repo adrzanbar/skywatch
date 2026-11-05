@@ -42,7 +42,8 @@ dotnet build SkyWatch.slnx
 dotnet test SkyWatch.slnx
 ```
 
-The live Kafka contract test is skipped unless `SKYWATCH_KAFKA_BOOTSTRAP` is set:
+The live Kafka contract test is opt-in. Without `SKYWATCH_KAFKA_BOOTSTRAP` it returns
+immediately; set it to exercise the real broker:
 
 ```bash
 SKYWATCH_KAFKA_BOOTSTRAP=10.66.51.35:9094 \
