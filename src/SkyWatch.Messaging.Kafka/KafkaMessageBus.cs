@@ -75,6 +75,10 @@ public sealed class KafkaMessageBus : IMessageBus, IAsyncDisposable
         ArgumentException.ThrowIfNullOrWhiteSpace(group);
         ArgumentNullException.ThrowIfNull(handler);
 
+        // The consume loop blocks between messages. Yield once so callers can start
+        // their own background loops before this subscription takes over the thread.
+        await Task.Yield();
+
         var config = new ConsumerConfig
         {
             BootstrapServers = _options.BootstrapServers,

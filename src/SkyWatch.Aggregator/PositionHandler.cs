@@ -2,6 +2,7 @@ using System.Text.Json;
 using SkyWatch.Analytics;
 using SkyWatch.Contracts;
 using SkyWatch.Messaging;
+using SkyWatch.Observability;
 using Microsoft.Extensions.Logging;
 
 namespace SkyWatch.Aggregator;
@@ -38,6 +39,7 @@ public sealed class PositionHandler : IMessageHandler
             return Task.FromResult(MessageResult.DeadLetter);
         }
 
+        SkyWatchTelemetry.PositionsConsumed.Add(1);
         _aggregator.Process(position);
         return Task.FromResult(MessageResult.Ack);
     }

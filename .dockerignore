@@ -1,0 +1,8 @@
+bin/
+obj/
+tests/
+.git/
+.vs/
+.vscode/
+TestResults/
+*.binlog

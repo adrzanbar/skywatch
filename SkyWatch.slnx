@@ -7,6 +7,7 @@
     <Project Path="src/SkyWatch.Messaging.K0sStreams/SkyWatch.Messaging.K0sStreams.csproj" />
     <Project Path="src/SkyWatch.Messaging.Kafka/SkyWatch.Messaging.Kafka.csproj" />
     <Project Path="src/SkyWatch.Messaging/SkyWatch.Messaging.csproj" />
+    <Project Path="src/SkyWatch.Observability/SkyWatch.Observability.csproj" />
     <Project Path="src/SkyWatch.Producer/SkyWatch.Producer.csproj" />
     <Project Path="src/SkyWatch.Sources.AdsbLol/SkyWatch.Sources.AdsbLol.csproj" />
     <Project Path="src/SkyWatch.Tracker/SkyWatch.Tracker.csproj" />

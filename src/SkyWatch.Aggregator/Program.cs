@@ -3,9 +3,11 @@ using SkyWatch.Aggregator;
 using SkyWatch.Analytics;
 using SkyWatch.Messaging.Hosting;
 using Microsoft.Extensions.Hosting;
+using SkyWatch.Observability;
 using Microsoft.Extensions.DependencyInjection;
 
 var builder = Host.CreateApplicationBuilder(args);
+builder.AddSkyWatchObservability("skywatch-aggregator");
 
 builder.Services.Configure<AirportOptions>(builder.Configuration.GetSection("Airports"));
 builder.Services.Configure<AggregatorOptions>(builder.Configuration.GetSection("Aggregator"));

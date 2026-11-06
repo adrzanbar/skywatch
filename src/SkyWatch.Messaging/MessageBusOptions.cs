@@ -44,4 +44,9 @@ public sealed class K0sStreamsBusOptions
     public int PollIntervalMs { get; set; } = 200;
 
     public int HttpTimeoutSeconds { get; set; } = 15;
+
+    /// <summary>Attempts per publish. K0sStreams can answer 503 while the quorum catches up.</summary>
+    public int PublishAttempts { get; set; } = 3;
+
+    public int PublishRetryBackoffMs { get; set; } = 500;
 }

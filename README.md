@@ -1,6 +1,6 @@
 # SkyWatch
 
-Real-time aircraft pipeline for the K0sStreams / Kafka comparison lab.
+Real-time aircraft pipeline that runs on Kafka or K0sStreams without code changes.
 
 The producer polls [adsb.lol](https://adsb.lol) (ODbL 1.0), turns each snapshot
 into position events, and publishes them through a broker-neutral
@@ -34,6 +34,29 @@ The dashboard is intentionally not part of this stage.
 
 Kafka manifests: `deploy/kafka/topics.yaml`
 K0sStreams manifests: `deploy/k0sstreams/topics.yaml`
+
+## Deploy in k0s
+
+The cluster deployment lives in `cluster_k0s/07_skywatch`. It creates the topics and
+the producer/consumers for one bus at a time:
+
+```bash
+cd ../cluster_k0s/07_skywatch
+sh 00_observability.sh
+sh 01_deploy.sh kafka
+sh 02_verify.sh kafka
+
+sh 01_deploy.sh k0sstreams
+sh 02_verify.sh k0sstreams
+```
+
+Both pipelines can run side by side in `skywatch-kafka` and `skywatch-k0sstreams`.
+
+## Observability
+
+Each service exposes Prometheus metrics on port `9100` and exports OTLP traces to
+Jaeger. `Observability:Host` defaults to `localhost`; the k0s deployment injects the pod
+IP through the Downward API because `HttpListener` rejects `0.0.0.0` on Linux.
 
 ## Build and test
 
@@ -92,11 +115,12 @@ Use the same `Messaging__Mode` and base URL for the tracker and aggregator.
 
 ## adsb.lol notes
 
-- The public API is rate-limited; the source spaces requests (`Adsb:RequestSpacingMs`,
-  default 500 ms) and retries a 429 once.
-- A poll can return hundreds of aircraft. `Adsb:MaxPositionsPerSnapshot` (default 200)
-  samples the snapshot evenly so K0sStreams, which publishes one HTTP request per
-  record, stays within a poll interval.
+- The public API is rate-limited; the source spaces requests (`Adsb:RequestSpacingMs`),
+  caps `Retry-After` (`Adsb:MaxRetryAfterSeconds`) and retries a 429 once per endpoint.
+- A poll can return hundreds of aircraft. `Adsb:MaxPositionsPerSnapshot` samples the
+  snapshot evenly. The k0s step uses 200 positions and 32 concurrent publishes on
+  Kafka, and 80/8 on K0sStreams, where every record is an HTTP request that waits for
+  quorum.
 - Default watch zones: Buenos Aires, Madrid, New York, London, Tokyo.
 - Emergency squawks: 7500, 7600, 7700.
 - `alt_baro: "ground"` is normalized to `OnGround = true`, altitude 0.

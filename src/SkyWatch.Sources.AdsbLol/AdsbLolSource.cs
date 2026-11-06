@@ -191,6 +191,13 @@ public sealed class AdsbLolSource : IAircraftSource
                 if (response.StatusCode == HttpStatusCode.TooManyRequests && attempt == 1)
                 {
                     TimeSpan delay = response.Headers.RetryAfter?.Delta ?? TimeSpan.FromSeconds(1);
+                    TimeSpan cap = TimeSpan.FromSeconds(Math.Max(1, _options.MaxRetryAfterSeconds));
+
+                    if (delay > cap)
+                    {
+                        delay = cap;
+                    }
+
                     _logger.LogWarning("adsb.lol {Source} rate-limited; retrying in {Delay}.", source, delay);
                     await Task.Delay(delay, cancellationToken).ConfigureAwait(false);
                     continue;

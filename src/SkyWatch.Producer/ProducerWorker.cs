@@ -1,8 +1,10 @@
-using SkyWatch.Contracts;
-using SkyWatch.Messaging;
-using SkyWatch.Sources.AdsbLol;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using SkyWatch.Contracts;
+using SkyWatch.Messaging;
+using SkyWatch.Observability;
+using SkyWatch.Sources.AdsbLol;
 
 namespace SkyWatch.Producer;
 
@@ -10,15 +12,18 @@ public sealed class ProducerWorker : BackgroundService
 {
     private readonly IAircraftSource _source;
     private readonly IMessageBus _bus;
+    private readonly ProducerOptions _options;
     private readonly ILogger<ProducerWorker> _logger;
 
     public ProducerWorker(
         IAircraftSource source,
         IMessageBus bus,
+        IOptions<ProducerOptions> options,
         ILogger<ProducerWorker> logger)
     {
         _source = source;
         _bus = bus;
+        _options = options.Value;
         _logger = logger;
     }
 
@@ -33,7 +38,7 @@ public sealed class ProducerWorker : BackgroundService
                 snapshot.Positions,
                 new ParallelOptions
                 {
-                    MaxDegreeOfParallelism = 32,
+                    MaxDegreeOfParallelism = Math.Max(1, _options.MaxDegreeOfParallelism),
                     CancellationToken = stoppingToken
                 },
                 async (position, cancellationToken) =>
@@ -51,6 +56,7 @@ public sealed class ProducerWorker : BackgroundService
                             .ConfigureAwait(false);
 
                         Interlocked.Increment(ref published);
+                        SkyWatchTelemetry.PositionsPublished.Add(1);
                     }
                     catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
                     {
@@ -59,6 +65,7 @@ public sealed class ProducerWorker : BackgroundService
                     catch (Exception ex)
                     {
                         Interlocked.Increment(ref errors);
+                        SkyWatchTelemetry.Errors.Add(1);
                         _logger.LogError(ex, "Could not publish position for {Hex}.", position.Hex);
                     }
                 }).ConfigureAwait(false);

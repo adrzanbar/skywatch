@@ -45,15 +45,33 @@ public sealed partial class K0sStreamsMessageBus : IMessageBus
             throw new ArgumentException("K0sStreams does not accept empty values.", nameof(record));
         }
 
-        try
+        int attempts = Math.Max(1, _options.PublishAttempts);
+
+        for (int attempt = 1; attempt <= attempts; attempt++)
         {
-            await PublishOnceAsync(topic, record, cancellationToken).ConfigureAwait(false);
-        }
-        catch (Exception ex) when (ex is not OperationCanceledException)
-        {
-            _logger.LogWarning(ex, "K0sStreams publish failed; resetting the cached leader and retrying once.");
-            ResetLeader();
-            await PublishOnceAsync(topic, record, cancellationToken).ConfigureAwait(false);
+            try
+            {
+                await PublishOnceAsync(topic, record, cancellationToken).ConfigureAwait(false);
+                return;
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                if (attempt == attempts)
+                {
+                    throw;
+                }
+
+                int delay = Math.Max(1, _options.PublishRetryBackoffMs) * attempt;
+                _logger.LogWarning(
+                    ex,
+                    "K0sStreams publish failed (attempt {Attempt}/{Attempts}); retrying in {Delay} ms.",
+                    attempt,
+                    attempts,
+                    delay);
+
+                ResetLeader();
+                await Task.Delay(delay, cancellationToken).ConfigureAwait(false);
+            }
         }
     }
 
@@ -66,6 +84,9 @@ public sealed partial class K0sStreamsMessageBus : IMessageBus
         ArgumentException.ThrowIfNullOrWhiteSpace(topic);
         ArgumentException.ThrowIfNullOrWhiteSpace(group);
         ArgumentNullException.ThrowIfNull(handler);
+
+        // Let the caller start other background loops before joining the queue.
+        await Task.Yield();
 
         string consumerId = BuildConsumerId(group);
         await JoinAsync(topic, group, consumerId, cancellationToken).ConfigureAwait(false);

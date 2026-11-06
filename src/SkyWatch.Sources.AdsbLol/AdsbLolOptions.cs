@@ -11,6 +11,9 @@ public sealed class AdsbLolOptions
     /// <summary>Delay between adsb.lol requests. The public API rate-limits bursts.</summary>
     public int RequestSpacingMs { get; set; } = 500;
 
+    /// <summary>Cap for the server's Retry-After header so one 429 does not stall a poll.</summary>
+    public int MaxRetryAfterSeconds { get; set; } = 5;
+
     /// <summary>
     /// Maximum aircraft kept per snapshot. Zero means no limit. K0sStreams publishes
     /// one HTTP request per record, so a cap keeps a poll bounded.

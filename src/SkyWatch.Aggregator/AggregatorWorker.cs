@@ -2,6 +2,7 @@ using Microsoft.Extensions.Options;
 using SkyWatch.Analytics;
 using SkyWatch.Contracts;
 using SkyWatch.Messaging;
+using SkyWatch.Observability;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
@@ -85,6 +86,8 @@ public sealed class AggregatorWorker : BackgroundService
                     result.Fleet.WindowEnd,
                     result.Fleet,
                     cancellationToken).ConfigureAwait(false);
+
+                SkyWatchTelemetry.StatsPublished.Add(result.Airports.Count + 1);
 
                 _logger.LogInformation(
                     "Published stats for {Airports} airports and {Aircraft} aircraft.",

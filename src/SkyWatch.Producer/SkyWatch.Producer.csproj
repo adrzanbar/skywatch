@@ -4,6 +4,7 @@
     <IsPackable>false</IsPackable>
   </PropertyGroup>
   <ItemGroup>
+    <ProjectReference Include="../SkyWatch.Observability/SkyWatch.Observability.csproj" />
     <PackageReference Include="Microsoft.Extensions.Hosting" />
     <PackageReference Include="Microsoft.Extensions.Http" />
     <ProjectReference Include="../SkyWatch.Contracts/SkyWatch.Contracts.csproj" />

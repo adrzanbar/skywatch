@@ -3,9 +3,11 @@ using SkyWatch.Analytics;
 using SkyWatch.Messaging.Hosting;
 using SkyWatch.Tracker;
 using Microsoft.Extensions.Hosting;
+using SkyWatch.Observability;
 using Microsoft.Extensions.DependencyInjection;
 
 var builder = Host.CreateApplicationBuilder(args);
+builder.AddSkyWatchObservability("skywatch-tracker");
 
 builder.Services.Configure<TrackerOptions>(builder.Configuration.GetSection("Tracker"));
 builder.Services.AddSingleton(serviceProvider =>

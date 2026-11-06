@@ -2,6 +2,7 @@ using System.Text.Json;
 using SkyWatch.Analytics;
 using SkyWatch.Contracts;
 using SkyWatch.Messaging;
+using SkyWatch.Observability;
 using Microsoft.Extensions.Logging;
 
 namespace SkyWatch.Tracker;
@@ -43,7 +44,13 @@ public sealed class PositionHandler : IMessageHandler
             return MessageResult.DeadLetter;
         }
 
+        SkyWatchTelemetry.PositionsConsumed.Add(1);
         IReadOnlyList<FlightAlert> alerts = _tracker.Process(position);
+
+        if (alerts.Count > 0)
+        {
+            SkyWatchTelemetry.AlertsPublished.Add(alerts.Count);
+        }
 
         foreach (FlightAlert alert in alerts)
         {
