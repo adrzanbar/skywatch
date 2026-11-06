@@ -37,12 +37,15 @@ K0sStreams manifests: `deploy/k0sstreams/topics.yaml`
 
 ## Deploy in k0s
 
-The cluster deployment lives in `cluster_k0s/07_skywatch`. It creates the topics and
-the producer/consumers for one bus at a time:
+The cluster deployment lives in `cluster_k0s/08_skywatch`; the shared observability
+stack is `cluster_k0s/07_observability`. The SkyWatch step creates the topics and the
+producer/consumers for one bus at a time:
 
 ```bash
-cd ../cluster_k0s/07_skywatch
+cd ../cluster_k0s/07_observability
 sh 00_observability.sh
+
+cd ../08_skywatch
 sh 01_deploy.sh kafka
 sh 02_verify.sh kafka
 
